@@ -19,16 +19,16 @@ package org.apache.spark.sql.sources
 import org.apache.gluten.execution.{FileSourceScanExecTransformer, ShuffledHashJoinExecTransformer}
 
 import org.apache.spark.sql.{DataFrame, GlutenTestsBaseTrait}
+import org.apache.spark.sql.GlutenTestsCommonTrait
 import org.apache.spark.sql.execution.{ColumnarShuffleExchangeExec, FileSourceScanExec, FileSourceScanLike, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanExec, ShuffleQueryStageExec}
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
-import org.apache.spark.sql.GlutenTestsCommonTrait
 import org.apache.spark.sql.internal.SQLConf
 
 class GlutenBucketedWriteWithHiveSupportSuite
   extends BucketedWriteWithHiveSupportSuite
   with GlutenTestsCommonTrait {
-    override def testBucketingCondition(
+  override def testBucketingCondition(
       shuffleLeft: Boolean,
       sortLeft: Boolean,
       numOutputPartitionsLeft: Option[Int],
