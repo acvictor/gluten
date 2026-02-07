@@ -18,7 +18,7 @@ package org.apache.spark.sql.sources
 
 import org.apache.gluten.execution.{FileSourceScanExecTransformer, ShuffledHashJoinExecTransformer}
 
-import org.apache.spark.sql.{DataFrame, GlutenTestsBaseTrait}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.GlutenTestsCommonTrait
 import org.apache.spark.sql.execution.{ColumnarShuffleExchangeExec, FileSourceScanExec, FileSourceScanLike, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanExec, ShuffleQueryStageExec}
@@ -43,7 +43,7 @@ class GlutenBucketedWriteWithHiveSupportSuite
       joined.queryExecution.executedPlan
     }
     val joinOperator = {
-      val shuffleExec = collect(executedPlan) { case s: ShuffledHashJoinExecTransformer => s }
+      val shuffleExec = executedPlan.collect { case s: ShuffledHashJoinExecTransformer => s }
       assert(shuffleExec.size == 1)
       shuffleExec.head
     }
@@ -80,7 +80,7 @@ class GlutenBucketedWriteWithHiveSupportSuite
   }
 
   override def getFileScan(plan: SparkPlan): FileSourceScanLike = {
-    val fileScan = collect(plan) {
+    val fileScan = plan.collect {
       case f: FileSourceScanExec => f
       case nf: FileSourceScanExecTransformer => nf
     }
@@ -96,13 +96,13 @@ class GlutenBucketedWriteWithHiveSupportSuite
       aqeEnabled =>
         withSQLConf(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key -> aqeEnabled.toString) {
           val plan = sql(query).queryExecution.executedPlan
-          val shuffles = collect(plan) {
+          val shuffles = plan.collect {
             case s: ShuffleExchangeExec => s
             case ns: ColumnarShuffleExchangeExec => ns
           }
           assert(shuffles.length == expectedNumShuffles)
 
-          val scans = collect(plan) {
+          val scans = plan.collect {
             case f: FileSourceScanExec if f.optionalNumCoalescedBuckets.isDefined => f
             case nf: FileSourceScanExecTransformer if nf.optionalNumCoalescedBuckets.isDefined => nf
           }
