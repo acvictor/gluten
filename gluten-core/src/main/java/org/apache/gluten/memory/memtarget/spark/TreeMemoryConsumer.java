@@ -26,6 +26,8 @@ import org.apache.spark.memory.MemoryConsumer;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.memory.TaskMemoryManager;
 import org.apache.spark.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -47,6 +49,8 @@ import java.util.stream.Collectors;
  * org.apache.gluten.memory.memtarget.spark.TreeMemoryConsumers}.
  */
 public class TreeMemoryConsumer extends MemoryConsumer implements TreeMemoryTarget {
+  private static final Logger LOG = LoggerFactory.getLogger(TreeMemoryConsumer.class);
+  private static final int MAX_SPILL_RETRIES = 100;
 
   private final SimpleMemoryUsageRecorder recorder = new SimpleMemoryUsageRecorder();
   private final Map<String, TreeMemoryTarget> children = new ConcurrentHashMap<>();
@@ -196,7 +200,8 @@ public class TreeMemoryConsumer extends MemoryConsumer implements TreeMemoryTarg
     }
 
     private boolean ensureFreeCapacity(long bytesNeeded) {
-      while (true) { // FIXME should we add retry limit?
+      int retries = 0;
+      while (retries < MAX_SPILL_RETRIES) {
         long freeBytes = freeBytes();
         Preconditions.checkState(freeBytes >= 0);
         if (freeBytes >= bytesNeeded) {
@@ -211,7 +216,14 @@ public class TreeMemoryConsumer extends MemoryConsumer implements TreeMemoryTarg
           // OOM
           return false;
         }
+        retries++;
       }
+      LOG.warn(
+          "Spill retry limit ({}) exceeded for node {}, needed {} bytes",
+          MAX_SPILL_RETRIES,
+          name,
+          bytesNeeded);
+      return false;
     }
 
     @Override
