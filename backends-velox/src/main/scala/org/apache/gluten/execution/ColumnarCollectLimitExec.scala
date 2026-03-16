@@ -83,9 +83,7 @@ case class ColumnarCollectLimitExec(
                 ColumnarBatches.retain(batch)
                 batch
               } else {
-                val sliced = VeloxColumnarBatches.slice(batch, startIndex, needed)
-                batch.close()
-                sliced
+                VeloxColumnarBatches.slice(batch, startIndex, needed)
               }
 
             rowsToCollect -= needed
