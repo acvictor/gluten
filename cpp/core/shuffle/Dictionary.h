@@ -23,7 +23,13 @@
 
 namespace gluten {
 
-enum class BlockType : uint8_t { kEndOfStream = 0, kPlainPayload = 1, kDictionary = 2, kDictionaryPayload = 3 };
+enum class BlockType : uint8_t {
+  kEndOfStream = 0,
+  kPlainPayload = 1,
+  kDictionary = 2,
+  kDictionaryPayload = 3,
+  kStatisticsPayload = 4
+};
 
 class ShuffleDictionaryStorage {
  public:

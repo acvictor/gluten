@@ -962,6 +962,14 @@ Java_org_apache_gluten_vectorized_LocalPartitionWriterJniWrapper_createPartition
       numSubDirs,
       enableDictionary);
 
+  // Reuse the dynamic filter config to also enable block statistics collection,
+  // since stats are only useful when dynamic filter pushdown is active.
+  const auto& confMap = ctx->getConfMap();
+  auto it = confMap.find("spark.gluten.sql.columnar.backend.velox.valueStream.dynamicFilter.enabled");
+  if (it != confMap.end() && it->second == "true") {
+    partitionWriterOptions->blockStatisticsEnabled = true;
+  }
+
   auto partitionWriter = std::make_shared<LocalPartitionWriter>(
       numPartitions,
       createCompressionCodec(

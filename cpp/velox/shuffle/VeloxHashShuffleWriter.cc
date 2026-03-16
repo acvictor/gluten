@@ -18,6 +18,7 @@
 #include "shuffle/VeloxHashShuffleWriter.h"
 #include "memory/ArrowMemory.h"
 #include "memory/VeloxColumnarBatch.h"
+#include "shuffle/BlockStatistics.h"
 #include "shuffle/Utils.h"
 #include "utils/Common.h"
 #include "utils/Macros.h"
@@ -975,6 +976,12 @@ arrow::Status VeloxHashShuffleWriter::evictBuffers(
   if (!buffers.empty()) {
     auto payload =
         std::make_unique<InMemoryPayload>(numRows, &isValidityBuffer_, schema_, std::move(buffers), hasComplexType_);
+    if (partitionWriter_->blockStatisticsEnabled()) {
+      // Compute and attach per-column min/max statistics before the buffers
+      // are moved into the partition writer pipeline.
+      auto stats = computeBlockStatistics(schema_, payload->getBuffers(), numRows, hasComplexType_);
+      payload->setBlockStats(std::move(stats));
+    }
     RETURN_NOT_OK(partitionWriter_->hashEvict(partitionId, std::move(payload), Evict::kCache, reuseBuffers, writtenBytes_));
   }
   return arrow::Status::OK();

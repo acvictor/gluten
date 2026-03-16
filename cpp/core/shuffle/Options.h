@@ -175,6 +175,7 @@ struct LocalPartitionWriterOptions {
   int32_t numSubDirs = kDefaultNumSubDirs; // spark.diskStore.subDirectories
 
   bool enableDictionary = kDefaultEnableDictionary;
+  bool blockStatisticsEnabled = false;
 
   LocalPartitionWriterOptions() = default;
 

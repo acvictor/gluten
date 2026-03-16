@@ -297,12 +297,14 @@ class LocalPartitionWriter::PayloadCache {
       arrow::util::Codec* codec,
       int32_t compressionThreshold,
       bool enableDictionary,
+      bool blockStatisticsEnabled,
       arrow::MemoryPool* pool,
       MemoryManager* memoryManager)
       : numPartitions_(numPartitions),
         codec_(codec),
         compressionThreshold_(compressionThreshold),
         enableDictionary_(enableDictionary),
+        blockStatisticsEnabled_(blockStatisticsEnabled),
         pool_(pool),
         memoryManager_(memoryManager) {}
 
@@ -346,6 +348,15 @@ class LocalPartitionWriter::PayloadCache {
         // Write the cached payload to disk.
         uint8_t blockType =
             static_cast<uint8_t>(hasDictionaries ? BlockType::kDictionaryPayload : BlockType::kPlainPayload);
+
+        // Write statistics block before non-dictionary payloads if enabled.
+        if (blockStatisticsEnabled_ && !hasDictionaries && payload->hasBlockStats()) {
+          static constexpr uint8_t kStatsBlockType = static_cast<uint8_t>(BlockType::kStatisticsPayload);
+          RETURN_NOT_OK(os->Write(&kStatsBlockType, sizeof(kStatsBlockType)));
+          int64_t payloadSize = sizeof(blockType) + payload->serializedSize();
+          RETURN_NOT_OK(payload->blockStats()->serialize(os, payloadSize));
+        }
+
         RETURN_NOT_OK(os->Write(&blockType, sizeof(blockType)));
         RETURN_NOT_OK(payload->serialize(os));
 
@@ -396,6 +407,15 @@ class LocalPartitionWriter::PayloadCache {
           // Spill the cached payload to disk.
           uint8_t blockType =
               static_cast<uint8_t>(hasDictionaries ? BlockType::kDictionaryPayload : BlockType::kPlainPayload);
+
+          // Write statistics block before non-dictionary payloads if enabled.
+          if (blockStatisticsEnabled_ && !hasDictionaries && payload->hasBlockStats()) {
+            static constexpr uint8_t kStatsBlockType = static_cast<uint8_t>(BlockType::kStatisticsPayload);
+            RETURN_NOT_OK(os->Write(&kStatsBlockType, sizeof(kStatsBlockType)));
+            int64_t payloadSize = sizeof(blockType) + payload->serializedSize();
+            RETURN_NOT_OK(payload->blockStats()->serialize(os.get(), payloadSize));
+          }
+
           RETURN_NOT_OK(os->Write(&blockType, sizeof(blockType)));
           RETURN_NOT_OK(payload->serialize(os.get()));
 
@@ -483,6 +503,7 @@ class LocalPartitionWriter::PayloadCache {
   arrow::util::Codec* codec_;
   int32_t compressionThreshold_;
   bool enableDictionary_;
+  bool blockStatisticsEnabled_;
   arrow::MemoryPool* pool_;
   MemoryManager* memoryManager_;
 
@@ -695,6 +716,7 @@ arrow::Status LocalPartitionWriter::finishMerger() {
               codec_.get(),
               options_->compressionThreshold,
               options_->enableDictionary,
+              options_->blockStatisticsEnabled,
               payloadPool_.get(),
               memoryManager_);
         }
@@ -744,6 +766,7 @@ arrow::Status LocalPartitionWriter::hashEvict(
           codec_.get(),
           options_->compressionThreshold,
           options_->enableDictionary,
+          options_->blockStatisticsEnabled,
           payloadPool_.get(),
           memoryManager_);
     }

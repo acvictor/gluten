@@ -67,6 +67,11 @@ class PartitionWriter : public Reclaimable {
   virtual arrow::Status
   evict(uint32_t partitionId, std::unique_ptr<BlockPayload> blockPayload, bool stop, int64_t& evictBytes) = 0;
 
+  /// Returns true if block-level statistics should be computed for payloads.
+  virtual bool blockStatisticsEnabled() const {
+    return false;
+  }
+
   uint64_t cachedPayloadSize() {
     return payloadPool_->bytes_allocated();
   }

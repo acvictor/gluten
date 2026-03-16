@@ -81,6 +81,10 @@ class LocalPartitionWriter : public PartitionWriter {
   // 3. After stop() called,
   arrow::Status reclaimFixedSize(int64_t size, int64_t* actual) override;
 
+  bool blockStatisticsEnabled() const override {
+    return options_ && options_->blockStatisticsEnabled;
+  }
+
  protected:
   class LocalSpiller;
 

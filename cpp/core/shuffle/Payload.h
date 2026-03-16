@@ -21,6 +21,7 @@
 #include <arrow/io/interfaces.h>
 #include <arrow/memory_pool.h>
 
+#include "shuffle/BlockStatistics.h"
 #include "shuffle/Dictionary.h"
 #include "shuffle/Options.h"
 #include "shuffle/Utils.h"
@@ -61,12 +62,25 @@ class Payload {
 
   std::string toString() const;
 
+  void setBlockStats(BlockStatistics stats) {
+    blockStats_ = std::move(stats);
+  }
+
+  const std::optional<BlockStatistics>& blockStats() const {
+    return blockStats_;
+  }
+
+  bool hasBlockStats() const {
+    return blockStats_.has_value();
+  }
+
  protected:
   Type type_;
   uint32_t numRows_;
   const std::vector<bool>* isValidityBuffer_;
   int64_t compressTime_{0};
   int64_t writeTime_{0};
+  std::optional<BlockStatistics> blockStats_;
 };
 
 // A block represents data to be cached in-memory.
@@ -94,6 +108,10 @@ class BlockPayload final : public Payload {
       arrow::util::Codec* codec);
 
   arrow::Status serialize(arrow::io::OutputStream* outputStream) override;
+
+  /// Returns the number of bytes that serialize() would write.
+  /// Only valid for kUncompressed and kCompressed payloads.
+  int64_t serializedSize() const;
 
   arrow::Result<std::shared_ptr<arrow::Buffer>> readBufferAt(uint32_t pos);
 
@@ -148,6 +166,10 @@ class InMemoryPayload final : public Payload {
   bool mergeable() const;
 
   std::shared_ptr<arrow::Schema> schema() const;
+
+  const std::vector<std::shared_ptr<arrow::Buffer>>& getBuffers() const {
+    return buffers_;
+  }
 
   arrow::Status createDictionaries(const std::shared_ptr<ShuffleDictionaryWriter>& dictionaryWriter);
 

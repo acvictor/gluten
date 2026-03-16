@@ -277,6 +277,30 @@ arrow::Status BlockPayload::serialize(arrow::io::OutputStream* outputStream) {
   return arrow::Status::OK();
 }
 
+int64_t BlockPayload::serializedSize() const {
+  switch (type_) {
+    case Type::kUncompressed: {
+      int64_t size = sizeof(Type) + sizeof(uint32_t) + sizeof(uint32_t); // type + numRows + numBuffers
+      for (const auto& buffer : buffers_) {
+        size += sizeof(int64_t); // buffer size field
+        if (buffer && buffer->size() > 0) {
+          size += buffer->size();
+        }
+      }
+      return size;
+    }
+    case Type::kCompressed: {
+      int64_t size = sizeof(Type) + sizeof(uint32_t) + sizeof(uint32_t); // type + numRows + numBuffers
+      if (!buffers_.empty() && buffers_[0]) {
+        size += buffers_[0]->size();
+      }
+      return size;
+    }
+    default:
+      return 0;
+  }
+}
+
 arrow::Result<std::shared_ptr<arrow::Buffer>> BlockPayload::readBufferAt(uint32_t pos) {
   if (type_ == Type::kCompressed) {
     return arrow::Status::Invalid("Cannot read buffer from compressed BlockPayload.");
@@ -413,12 +437,27 @@ arrow::Result<std::unique_ptr<InMemoryPayload>> InMemoryPayload::merge(
       }
     }
   }
-  return std::make_unique<InMemoryPayload>(mergedRows, isValidityBuffer, source->schema(), std::move(merged));
+  auto result = std::make_unique<InMemoryPayload>(mergedRows, isValidityBuffer, source->schema(), std::move(merged));
+  // Merge block statistics if both payloads have them.
+  if (source->hasBlockStats() && append->hasBlockStats()) {
+    auto mergedStats = *source->blockStats_;
+    mergedStats.merge(*append->blockStats_);
+    result->setBlockStats(std::move(mergedStats));
+  } else if (source->hasBlockStats()) {
+    result->setBlockStats(*source->blockStats_);
+  } else if (append->hasBlockStats()) {
+    result->setBlockStats(*append->blockStats_);
+  }
+  return result;
 }
 
 arrow::Result<std::unique_ptr<BlockPayload>>
 InMemoryPayload::toBlockPayload(Payload::Type payloadType, arrow::MemoryPool* pool, arrow::util::Codec* codec) {
-  return BlockPayload::fromBuffers(payloadType, numRows_, std::move(buffers_), isValidityBuffer_, pool, codec);
+  auto result = BlockPayload::fromBuffers(payloadType, numRows_, std::move(buffers_), isValidityBuffer_, pool, codec);
+  if (result.ok() && blockStats_.has_value()) {
+    (*result)->setBlockStats(std::move(*blockStats_));
+  }
+  return result;
 }
 
 arrow::Status InMemoryPayload::serialize(arrow::io::OutputStream* outputStream) {
