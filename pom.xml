@@ -29,7 +29,7 @@
 
   <name>Gluten Parent Pom</name>
   <description>Apache Gluten</description>
-  <url>https://github.com/apache/incubator-gluten.git</url>
+  <url>https://github.com/apache/gluten.git</url>
 
   <organization>
     <name>Apache Software Foundation</name>
@@ -49,13 +49,12 @@
     <module>gluten-ui</module>
     <module>package</module>
     <module>shims</module>
-    <module>gluten-ras</module>
   </modules>
 
   <scm>
-    <connection>scm:git:git://github.com/apache/incubator-gluten.git</connection>
-    <developerConnection>scm:git:ssh://github.com:apache/incubator-gluten.git</developerConnection>
-    <url>https://github.com/apache/incubator-gluten/tree/main</url>
+    <connection>scm:git:git://github.com/apache/gluten.git</connection>
+    <developerConnection>scm:git:ssh://github.com:apache/gluten.git</developerConnection>
+    <url>https://github.com/apache/gluten/tree/main</url>
   </scm>
 
   <properties>

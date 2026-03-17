@@ -27,7 +27,7 @@ import org.apache.gluten.extension.columnar.rewrite._
 import org.apache.gluten.extension.columnar.transition.{InsertTransitions, RemoveTransitions}
 import org.apache.gluten.extension.columnar.validator.{Validator, Validators}
 import org.apache.gluten.extension.injector.{Injector, SparkInjector}
-import org.apache.gluten.extension.injector.GlutenInjector.{LegacyInjector, RasInjector}
+import org.apache.gluten.extension.injector.GlutenInjector.LegacyInjector
 import org.apache.gluten.parser.{GlutenCacheFilesSqlParser, GlutenClickhouseSqlParser}
 import org.apache.gluten.sql.shims.SparkShimLoader
 
@@ -46,7 +46,6 @@ class CHRuleApi extends RuleApi {
   override def injectRules(injector: Injector): Unit = {
     injectSpark(injector.spark)
     injectLegacy(injector.gluten.legacy)
-    injectRas(injector.gluten.ras)
   }
 }
 
@@ -54,7 +53,7 @@ object CHRuleApi {
 
   /**
    * Registers Spark rules or extensions, except for Gluten's columnar rules that are supposed to be
-   * injected through [[injectLegacy]] / [[injectRas]].
+   * injected through [[injectLegacy]].
    */
   private def injectSpark(injector: SparkInjector): Unit = {
     // Inject the regular Spark rules directly.
@@ -181,7 +180,7 @@ object CHRuleApi {
   }
 
   /**
-   * Since https://github.com/apache/incubator-gluten/pull/883.
+   * Since https://github.com/apache/gluten/pull/883.
    *
    * TODO: Remove this since tricky to maintain.
    */

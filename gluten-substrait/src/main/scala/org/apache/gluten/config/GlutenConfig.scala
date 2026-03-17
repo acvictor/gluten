@@ -170,7 +170,7 @@ class GlutenConfig(conf: SQLConf) extends GlutenCoreConfig(conf) {
       .equals("org.apache.spark.shuffle.sort.ColumnarShuffleManager")
 
   // Whether to use CelebornShuffleManager.
-  // TODO: Deprecate the API: https://github.com/apache/incubator-gluten/issues/10107.
+  // TODO: Deprecate the API: https://github.com/apache/gluten/issues/10107.
   def isUseCelebornShuffleManager: Boolean =
     conf
       .getConfString("spark.shuffle.manager", "sort")
@@ -663,10 +663,6 @@ object GlutenConfig extends ConfigRegistry {
   }
 
   val GLUTEN_ENABLED = GlutenCoreConfig.GLUTEN_ENABLED
-
-  val RAS_ENABLED = GlutenCoreConfig.RAS_ENABLED
-
-  val RAS_COST_MODEL = GlutenCoreConfig.RAS_COST_MODEL
 
   val GLUTEN_UI_ENABLED = buildStaticConf("spark.gluten.ui.enabled")
     .doc(
