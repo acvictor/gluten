@@ -286,17 +286,17 @@ object ExpressionConverter extends SQLConfHelper with Logging {
       expressionsMap: Map[Class[_], String]): Option[ExpressionTransformer] = {
     expr match {
       case pythonUDF: PythonUDF =>
-        Some(replacePythonUDFWithExpressionTransformer(pythonUDF, attributeSeq, expressionsMap))
+        Option(replacePythonUDFWithExpressionTransformer(pythonUDF, attributeSeq, expressionsMap))
       case scalaUDF: ScalaUDF =>
-        Some(replaceScalaUDFWithExpressionTransformer(scalaUDF, attributeSeq, expressionsMap))
+        Option(replaceScalaUDFWithExpressionTransformer(scalaUDF, attributeSeq, expressionsMap))
       case _ if HiveUDFTransformer.isHiveUDF(expr) =>
-        Some(
+        Option(
           BackendsApiManager.getSparkPlanExecApiInstance.genHiveUDFTransformer(expr, attributeSeq))
       case staticInvoke: StaticInvoke =>
-        Some(
+        Option(
           replaceStaticInvokeWithExpressionTransformer(staticInvoke, attributeSeq, expressionsMap))
       case invoke: Invoke =>
-        Some(replaceInvokeWithExpressionTransformer(invoke, attributeSeq, expressionsMap))
+        Option(replaceInvokeWithExpressionTransformer(invoke, attributeSeq, expressionsMap))
       case _ =>
         None
     }
