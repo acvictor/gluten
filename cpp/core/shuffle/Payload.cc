@@ -438,15 +438,13 @@ arrow::Result<std::unique_ptr<InMemoryPayload>> InMemoryPayload::merge(
     }
   }
   auto result = std::make_unique<InMemoryPayload>(mergedRows, isValidityBuffer, source->schema(), std::move(merged));
-  // Merge block statistics if both payloads have them.
+  // Merge block statistics only when both payloads have them.
+  // Carrying one-sided stats would produce too-narrow min/max ranges that
+  // could cause false negatives during block pruning.
   if (source->hasBlockStats() && append->hasBlockStats()) {
     auto mergedStats = *source->blockStats_;
     mergedStats.merge(*append->blockStats_);
     result->setBlockStats(std::move(mergedStats));
-  } else if (source->hasBlockStats()) {
-    result->setBlockStats(*source->blockStats_);
-  } else if (append->hasBlockStats()) {
-    result->setBlockStats(*append->blockStats_);
   }
   return result;
 }

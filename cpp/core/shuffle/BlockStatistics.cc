@@ -37,9 +37,19 @@ bool hasAnyNull(const std::shared_ptr<arrow::Buffer>& validityBuffer, uint32_t n
   if (!validityBuffer || numRows == 0) {
     return false;
   }
-  // Check each bit — return early on first null found.
-  for (uint32_t i = 0; i < numRows; ++i) {
-    if (!arrow::bit_util::GetBit(validityBuffer->data(), i)) {
+  const uint8_t* data = validityBuffer->data();
+  uint32_t fullBytes = numRows / 8;
+  // Check full bytes — 0xFF means all 8 bits are valid.
+  for (uint32_t i = 0; i < fullBytes; ++i) {
+    if (data[i] != 0xFF) {
+      return true;
+    }
+  }
+  // Check remaining bits in the last partial byte.
+  uint32_t remainingBits = numRows % 8;
+  if (remainingBits > 0) {
+    uint8_t mask = static_cast<uint8_t>((1u << remainingBits) - 1);
+    if ((data[fullBytes] & mask) != mask) {
       return true;
     }
   }

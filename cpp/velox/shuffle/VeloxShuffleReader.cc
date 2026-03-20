@@ -22,6 +22,7 @@
 #include <velox/common/caching/AsyncDataCache.h>
 
 #include "memory/VeloxColumnarBatch.h"
+#include "shuffle/BlockStatistics.h"
 #include "shuffle/GlutenByteStream.h"
 #include "shuffle/Payload.h"
 #include "shuffle/Utils.h"
@@ -482,6 +483,11 @@ bool VeloxHashShuffleReaderDeserializer::resolveNextBlockType() {
         dictionaries_.clear();
       }
     } break;
+    case BlockType::kStatisticsPayload: {
+      // Skip the statistics block and resolve the actual payload block that follows.
+      GLUTEN_ASSIGN_OR_THROW(auto statsAndSize, BlockStatistics::deserialize(in_.get()));
+      return resolveNextBlockType();
+    }
     default:
       throw GlutenException(fmt::format("Unsupported block type: {}", static_cast<int32_t>(blockType)));
   }

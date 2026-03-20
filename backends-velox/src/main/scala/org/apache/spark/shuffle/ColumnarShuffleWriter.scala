@@ -18,7 +18,7 @@ package org.apache.spark.shuffle
 
 import org.apache.gluten.backendsapi.BackendsApiManager
 import org.apache.gluten.columnarbatch.ColumnarBatches
-import org.apache.gluten.config.{GlutenConfig, GpuHashShuffleWriterType, HashShuffleWriterType, SortShuffleWriterType}
+import org.apache.gluten.config.{GlutenConfig, GpuHashShuffleWriterType, HashShuffleWriterType, SortShuffleWriterType, VeloxConfig}
 import org.apache.gluten.memory.memtarget.{MemoryTarget, Spiller}
 import org.apache.gluten.runtime.Runtimes
 import org.apache.gluten.vectorized._
@@ -156,7 +156,8 @@ class ColumnarShuffleWriter[K, V](
             conf.get(SHUFFLE_FILE_BUFFER_SIZE).toInt,
             tempDataFile.getAbsolutePath,
             localDirs,
-            GlutenConfig.get.columnarShuffleEnableDictionary
+            GlutenConfig.get.columnarShuffleEnableDictionary,
+            VeloxConfig.get.valueStreamDynamicFilterEnabled
           )
 
           nativeShuffleWriter = if (isSort) {
