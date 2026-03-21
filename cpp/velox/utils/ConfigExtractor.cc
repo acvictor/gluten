@@ -70,6 +70,7 @@ void getS3HiveConfig(
       {S3Config::Keys::kIamRole, std::make_pair("iam.role", std::nullopt)},
       {S3Config::Keys::kIamRoleSessionName, std::make_pair("iam.role.session.name", "gluten-session")},
       {S3Config::Keys::kEndpointRegion, std::make_pair("endpoint.region", std::nullopt)},
+      {S3Config::Keys::kIMDSEnabled, std::make_pair("aws.imds.enabled", "true")},
   };
 
   // get Velox S3 config key from Spark Suffix.
@@ -124,6 +125,7 @@ void getS3HiveConfig(
   setConfigIfPresent(S3Config::Keys::kSocketTimeout);
   setConfigIfPresent(S3Config::Keys::kConnectTimeout);
   setConfigIfPresent(S3Config::Keys::kEndpointRegion);
+  setConfigIfPresent(S3Config::Keys::kIMDSEnabled);
 
   hiveConfMap[S3Config::kS3LogLevel] = conf->get<std::string>(kVeloxAwsSdkLogLevel, kVeloxAwsSdkLogLevelDefault);
   hiveConfMap[S3Config::baseConfigKey(S3Config::Keys::kUseProxyFromEnv)] =
@@ -231,6 +233,8 @@ std::shared_ptr<facebook::velox::config::ConfigBase> createHiveConnectorSessionC
   configs[facebook::velox::connector::hive::HiveConfig::kReadTimestampUnitSession] = std::string("6");
   configs[facebook::velox::connector::hive::HiveConfig::kMaxPartitionsPerWritersSession] =
       conf->get<std::string>(kMaxPartitions, "10000");
+  configs[facebook::velox::connector::hive::HiveConfig::kMaxTargetFileSize] =
+      conf->get<std::string>(kMaxTargetFileSize, "0B"); // 0 means no limit on target file size
   configs[facebook::velox::connector::hive::HiveConfig::kIgnoreMissingFilesSession] =
       conf->get<bool>(kIgnoreMissingFiles, false) ? "true" : "false";
   configs[facebook::velox::connector::hive::HiveConfig::kParquetUseColumnNamesSession] =
@@ -292,9 +296,7 @@ std::shared_ptr<facebook::velox::config::ConfigBase> createHiveConnectorConfig(
       conf->get<std::string>(kPrefetchRowGroups, "1");
   hiveConfMap[facebook::velox::connector::hive::HiveConfig::kLoadQuantum] =
       conf->get<std::string>(kLoadQuantum, "268435456"); // 256M
-  auto footerEstimatedSize = conf->get<std::string>(kDirectorySizeGuess, "32768"); // 32K
-  hiveConfMap[facebook::velox::connector::hive::HiveConfig::kFooterEstimatedSize] =
-      conf->get<std::string>(kFooterEstimatedSize, footerEstimatedSize); // 32K
+
   hiveConfMap[facebook::velox::connector::hive::HiveConfig::kFilePreloadThreshold] =
       conf->get<std::string>(kFilePreloadThreshold, "1048576"); // 1M
 
