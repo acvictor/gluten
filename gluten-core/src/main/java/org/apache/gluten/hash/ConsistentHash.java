@@ -162,7 +162,8 @@ public class ConsistentHash<T extends ConsistentHash.Node> {
   public Set<Partition<T>> getPartition(T node) {
     lock.readLock().lock();
     try {
-      return nodes.get(node);
+      Set<Partition<T>> partitions = nodes.get(node);
+      return partitions == null ? null : Collections.unmodifiableSet(partitions);
     } finally {
       lock.readLock().unlock();
     }
