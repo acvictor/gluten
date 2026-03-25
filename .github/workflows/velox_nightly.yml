@@ -92,7 +92,7 @@ jobs:
           yum update -y && yum install -y java-1.8.0-openjdk-devel
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Build package for Spark
         run: |
           cd $GITHUB_WORKSPACE/ && \
@@ -130,7 +130,7 @@ jobs:
           yum update -y && yum install -y java-17-openjdk-devel
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Build package for Spark
         run: |
           cd $GITHUB_WORKSPACE/ && \
@@ -166,7 +166,7 @@ jobs:
           yum update -y && yum install -y java-21-openjdk-devel
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Build package for Spark
         run: |
           cd $GITHUB_WORKSPACE/ && \
@@ -243,7 +243,7 @@ jobs:
           yum update -y && yum install -y java-1.8.0-openjdk-devel
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Build package for Spark
         run: |
           cd $GITHUB_WORKSPACE/ && \
@@ -281,7 +281,7 @@ jobs:
           yum update -y && yum install -y java-17-openjdk-devel
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Build package for Spark
         run: |
           cd $GITHUB_WORKSPACE/ && \
@@ -319,7 +319,7 @@ jobs:
           yum update -y && yum install -y java-21-openjdk-devel
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Build package for Spark
         run: |
           cd $GITHUB_WORKSPACE/ && \
@@ -341,7 +341,7 @@ jobs:
     steps:
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Download ARM JDK8 Package Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -370,7 +370,7 @@ jobs:
     steps:
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Download ARM JDK17 Package Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -399,7 +399,7 @@ jobs:
     steps:
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Download ARM JDK21 Package Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -480,7 +480,7 @@ jobs:
           yum update -y && yum install -y java-17-openjdk-devel wget
       - name: Get current date
         id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Build package for Spark
         run: |
           cd $GITHUB_WORKSPACE/ && \
