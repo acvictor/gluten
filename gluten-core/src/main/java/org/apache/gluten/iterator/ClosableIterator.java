@@ -69,6 +69,9 @@ public abstract class ClosableIterator<T> implements AutoCloseable, Serializable
    * to translate backend-specific exceptions into Spark-compatible exceptions.
    */
   protected RuntimeException translateException(Exception e) {
+    if (e instanceof RuntimeException) {
+      return (RuntimeException) e;
+    }
     return new GlutenException(e);
   }
 }
