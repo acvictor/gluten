@@ -18,17 +18,16 @@ package org.apache.gluten.vectorized;
 
 import io.github.zhztheplayer.velox4j.data.RowVector;
 
+import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
 /** Iterator for velox RowVector. */
 public class VLVectorIterator implements Iterator<RowVector> {
 
-  private final List<RowVector> rows;
+  private final ArrayDeque<RowVector> rows;
 
   public VLVectorIterator() {
-    this.rows = new LinkedList<>();
+    this.rows = new ArrayDeque<>();
   }
 
   public boolean hasNext() {
@@ -39,7 +38,7 @@ public class VLVectorIterator implements Iterator<RowVector> {
     if (!hasNext()) {
       return null;
     }
-    return rows.remove(0);
+    return rows.removeFirst();
   }
 
   public void addRow(RowVector row) {
