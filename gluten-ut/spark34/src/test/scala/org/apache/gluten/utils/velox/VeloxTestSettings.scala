@@ -115,10 +115,14 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("data type casting")
     // Revised by setting timezone through config and commented unsupported cases.
     .exclude("cast string to timestamp")
+    // TODO: fix after https://github.com/facebookincubator/velox/pull/14910
+    .exclude("SPARK-39749: cast Decimal to string")
   enableSuite[GlutenCollectionExpressionsSuite]
     // Rewrite in Gluten to replace Seq with Array
     .exclude("Shuffle")
     .excludeGlutenTest("Shuffle")
+    // Rewrite.
+    .exclude("MapFromEntries")
   enableSuite[GlutenConditionalExpressionSuite]
   enableSuite[GlutenDateExpressionsSuite]
     // Has exception in fallback execution when we use resultDF.collect in evaluation.

@@ -286,6 +286,14 @@ class VeloxSparkPlanExecApi extends SparkPlanExecApi with Logging {
     GenericExpressionTransformer(substraitExprName, Seq(endDate, startDate), original)
   }
 
+  /** Transform map_from_entries to Substrait. */
+  override def genMapFromEntriesTransformer(
+      substraitExprName: String,
+      child: ExpressionTransformer,
+      expr: Expression): ExpressionTransformer = {
+    GenericExpressionTransformer(substraitExprName, Seq(child), expr)
+  }
+
   override def genPreciseTimestampConversionTransformer(
       substraitExprName: String,
       children: Seq[ExpressionTransformer],
@@ -345,6 +353,23 @@ class VeloxSparkPlanExecApi extends SparkPlanExecApi with Logging {
       resultExpressions: Seq[NamedExpression],
       child: SparkPlan): HashAggregateExecBaseTransformer =
     RegularHashAggregateExecTransformer(
+      requiredChildDistributionExpressions,
+      groupingExpressions,
+      aggregateExpressions,
+      aggregateAttributes,
+      initialInputBufferOffset,
+      resultExpressions,
+      child)
+
+  override def genSortAggregateExecTransformer(
+      requiredChildDistributionExpressions: Option[Seq[Expression]],
+      groupingExpressions: Seq[NamedExpression],
+      aggregateExpressions: Seq[AggregateExpression],
+      aggregateAttributes: Seq[Attribute],
+      initialInputBufferOffset: Int,
+      resultExpressions: Seq[NamedExpression],
+      child: SparkPlan): HashAggregateExecBaseTransformer =
+    SortHashAggregateExecTransformer(
       requiredChildDistributionExpressions,
       groupingExpressions,
       aggregateExpressions,

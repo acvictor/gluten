@@ -127,10 +127,14 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("data type casting")
     // Revised by setting timezone through config and commented unsupported cases.
     .exclude("cast string to timestamp")
+    // TODO: fix after https://github.com/facebookincubator/velox/pull/14910
+    .exclude("SPARK-39749: cast Decimal to string")
   enableSuite[GlutenCollectionExpressionsSuite]
     // Rewrite in Gluten to replace Seq with Array
     .exclude("Shuffle")
     .excludeGlutenTest("Shuffle")
+    // Rewrite
+    .exclude("MapFromEntries")
   enableSuite[GlutenConditionalExpressionSuite]
   enableSuite[GlutenDateExpressionsSuite]
     // Has exception in fallback execution when we use resultDF.collect in evaluation.
@@ -215,15 +219,15 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenBitmapExpressionUtilsSuite]
   enableSuite[GlutenCallMethodViaReflectionSuite]
   enableSuite[GlutenCanonicalizeSuite]
-  enableSuite[GlutenCastWithAnsiOnSuite]
+  // TODO: 4.x enableSuite[GlutenCastWithAnsiOnSuite]  // 4 failures
   enableSuite[GlutenCodeGenerationSuite]
   enableSuite[GlutenCodeGeneratorWithInterpretedFallbackSuite]
   enableSuite[GlutenCollationExpressionSuite]
   enableSuite[GlutenCollationRegexpExpressionsSuite]
-  enableSuite[GlutenCsvExpressionsSuite]
+  // TODO: 4.x enableSuite[GlutenCsvExpressionsSuite]  // failures with GlutenPlugin
   enableSuite[GlutenDynamicPruningSubquerySuite]
   enableSuite[GlutenExprIdSuite]
-  enableSuite[GlutenExpressionEvalHelperSuite]
+  // TODO: 4.x enableSuite[GlutenExpressionEvalHelperSuite]  // 2 failures
   enableSuite[GlutenExpressionImplUtilsSuite]
   enableSuite[GlutenExpressionSQLBuilderSuite]
   enableSuite[GlutenExpressionSetSuite]
@@ -231,16 +235,16 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenHexSuite]
   enableSuite[GlutenMutableProjectionSuite]
   enableSuite[GlutenNamedExpressionSuite]
-  enableSuite[GlutenObjectExpressionsSuite]
+  // TODO: 4.x enableSuite[GlutenObjectExpressionsSuite]  // 7 failures
   enableSuite[GlutenOrderingSuite]
-  enableSuite[GlutenScalaUDFSuite]
+  // TODO: 4.x enableSuite[GlutenScalaUDFSuite]  // 1 failure
   enableSuite[GlutenSchemaPruningSuite]
   enableSuite[GlutenSelectedFieldSuite]
   // GlutenSubExprEvaluationRuntimeSuite is removed because SubExprEvaluationRuntimeSuite
   // is in test-jar without shaded Guava, while SubExprEvaluationRuntime is shaded.
   enableSuite[GlutenSubexpressionEliminationSuite]
   enableSuite[GlutenTimeWindowSuite]
-  enableSuite[GlutenToPrettyStringSuite]
+  // TODO: 4.x enableSuite[GlutenToPrettyStringSuite]  // 1 failure
   enableSuite[GlutenUnsafeRowConverterSuite]
   enableSuite[GlutenUnwrapUDTExpressionSuite]
   enableSuite[GlutenV2ExpressionUtilsSuite]
@@ -252,7 +256,7 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenDataSourceV2OptionSuite]
   enableSuite[GlutenDataSourceV2UtilsSuite]
   // TODO: 4.x enableSuite[GlutenGroupBasedUpdateTableSuite]  // 1 failure
-  // TODO: 4.x enableSuite[GlutenMergeIntoDataFrameSuite]  // 1 failure
+  enableSuite[GlutenMergeIntoDataFrameSuite]
   enableSuite[GlutenProcedureSuite]
   enableSuite[GlutenPushablePredicateSuite]
   enableSuite[GlutenV1ReadFallbackWithCatalogSuite]
@@ -694,10 +698,10 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenAggregatingAccumulatorSuite]
   enableSuite[GlutenCoGroupedIteratorSuite]
   enableSuite[GlutenColumnarRulesSuite]
-  enableSuite[GlutenDataSourceScanExecRedactionSuite]
-  enableSuite[GlutenDataSourceV2ScanExecRedactionSuite]
+  // TODO: 4.x enableSuite[GlutenDataSourceScanExecRedactionSuite]  // 2 failures
+  // TODO: 4.x enableSuite[GlutenDataSourceV2ScanExecRedactionSuite]  // 2 failures
   enableSuite[GlutenExecuteImmediateEndToEndSuite]
-  enableSuite[GlutenExternalAppendOnlyUnsafeRowArraySuite]
+  // TODO: 4.x enableSuite[GlutenExternalAppendOnlyUnsafeRowArraySuite]  // 14 failures
   enableSuite[GlutenGlobalTempViewSuite]
   enableSuite[GlutenGlobalTempViewTestSuite]
   enableSuite[GlutenGroupedIteratorSuite]
@@ -708,23 +712,23 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenOptimizeMetadataOnlyQuerySuite]
   enableSuite[GlutenPersistedViewTestSuite]
   // TODO: 4.x enableSuite[GlutenPlannerSuite]  // 1 failure
-  enableSuite[GlutenProjectedOrderingAndPartitioningSuite]
+  // TODO: 4.x enableSuite[GlutenProjectedOrderingAndPartitioningSuite]  // 6 failures
   enableSuite[GlutenQueryPlanningTrackerEndToEndSuite]
-  enableSuite[GlutenRemoveRedundantProjectsSuite]
+  // TODO: 4.x enableSuite[GlutenRemoveRedundantProjectsSuite]  // 14 failures
   // TODO: 4.x enableSuite[GlutenRemoveRedundantSortsSuite]  // 1 failure
   enableSuite[GlutenRowToColumnConverterSuite]
-  enableSuite[GlutenSQLExecutionSuite]
+  // TODO: 4.x enableSuite[GlutenSQLExecutionSuite]  // 1 failure
   enableSuite[GlutenSQLFunctionSuite]
-  enableSuite[GlutenSQLJsonProtocolSuite]
-  enableSuite[GlutenShufflePartitionsUtilSuite]
-  enableSuite[GlutenSimpleSQLViewSuite]
+  // TODO: 4.x enableSuite[GlutenSQLJsonProtocolSuite]  // 1 failure
+  // TODO: 4.x enableSuite[GlutenShufflePartitionsUtilSuite]  // 1 failure
+  // TODO: 4.x enableSuite[GlutenSimpleSQLViewSuite]  // 1 failure
   // TODO: 4.x enableSuite[GlutenSparkPlanSuite]  // 1 failure
   enableSuite[GlutenSparkPlannerSuite]
   enableSuite[GlutenSparkScriptTransformationSuite]
   enableSuite[GlutenSparkSqlParserSuite]
   enableSuite[GlutenUnsafeFixedWidthAggregationMapSuite]
   enableSuite[GlutenUnsafeKVExternalSorterSuite]
-  enableSuite[GlutenUnsafeRowSerializerSuite]
+  // TODO: 4.x enableSuite[GlutenUnsafeRowSerializerSuite]  // 1 failure
   // TODO: 4.x enableSuite[GlutenWholeStageCodegenSparkSubmitSuite]  // 1 failure
   // TODO: 4.x enableSuite[GlutenWholeStageCodegenSuite]  // 24 failures
   enableSuite[GlutenBroadcastExchangeSuite]
@@ -826,7 +830,7 @@ class VeloxTestSettings extends BackendTestSettings {
   // TODO: 4.x enableSuite[GlutenExplainSuite]  // 1 failure
   enableSuite[GlutenICUCollationsMapSuite]
   enableSuite[GlutenInlineTableParsingImprovementsSuite]
-  enableSuite[GlutenJoinHintSuite]
+  // TODO: 4.x enableSuite[GlutenJoinHintSuite]  // 1 failure
   enableSuite[GlutenLogQuerySuite]
     // Overridden
     .exclude("Query Spark logs with exception using SQL")
@@ -839,7 +843,7 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenSessionStateSuite]
   // TODO: 4.x enableSuite[GlutenSetCommandSuite]  // 1 failure
   enableSuite[GlutenSparkSessionBuilderSuite]
-  // TODO: 4.x enableSuite[GlutenSparkSessionJobTaggingAndCancellationSuite]  // 1 failure
+  enableSuite[GlutenSparkSessionJobTaggingAndCancellationSuite]
   enableSuite[GlutenTPCDSCollationQueryTestSuite]
   enableSuite[GlutenTPCDSModifiedPlanStabilitySuite]
   enableSuite[GlutenTPCDSModifiedPlanStabilityWithStatsSuite]
@@ -857,9 +861,13 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenUDTRegistrationSuite]
   enableSuite[GlutenUnsafeRowSuite]
   enableSuite[GlutenUserDefinedTypeSuite]
-  // TODO: 4.x enableSuite[GlutenVariantEndToEndSuite]  // 3 failures
-  // TODO: 4.x enableSuite[GlutenVariantShreddingSuite]  // 8 failures
+  enableSuite[GlutenVariantEndToEndSuite]
+  enableSuite[GlutenVariantShreddingSuite]
   enableSuite[GlutenVariantSuite]
+    // TODO: Velox parquet writer marks all struct fields as OPTIONAL (nullable),
+    //  but Spark's variant type requires REQUIRED fields. Needs Velox-side fix.
+    .exclude("SPARK-47546: invalid variant binary")
+    .exclude("SPARK-47546: valid variant binary")
   enableSuite[GlutenVariantWriteShreddingSuite]
   enableSuite[GlutenXmlFunctionsSuite]
   enableSuite[GlutenApproxCountDistinctForIntervalsQuerySuite]
@@ -1091,7 +1099,7 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenFallbackSuite]
   enableSuite[GlutenHiveSQLQuerySuite]
   enableSuite[GlutenCollapseProjectExecTransformerSuite]
-  enableSuite[GlutenSparkSessionExtensionSuite]
+  // TODO: 4.x enableSuite[GlutenSparkSessionExtensionSuite]  // 1 failure
   enableSuite[GlutenGroupBasedDeleteFromTableSuite]
   enableSuite[GlutenDeltaBasedDeleteFromTableSuite]
   enableSuite[GlutenDataFrameToSchemaSuite]
@@ -1186,11 +1194,11 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenCommitLogSuite]
   // TODO: 4.x enableSuite[GlutenEventTimeWatermarkSuite]
   enableSuite[GlutenFileStreamSinkV1Suite]
-  enableSuite[GlutenFileStreamSinkV2Suite]
+  // TODO: 4.x enableSuite[GlutenFileStreamSinkV2Suite]  // 1 failure
   enableSuite[GlutenFileStreamSourceStressTestSuite]
   // TODO: 4.x enableSuite[GlutenFileStreamSourceSuite]
   enableSuite[GlutenFileStreamStressSuite]
-  enableSuite[GlutenFlatMapGroupsInPandasWithStateDistributionSuite]
+  // TODO: 4.x enableSuite[GlutenFlatMapGroupsInPandasWithStateDistributionSuite]  // failures with GlutenPlugin
   enableSuite[GlutenFlatMapGroupsInPandasWithStateSuite]
   // TODO: 4.x enableSuite[GlutenFlatMapGroupsWithStateDistributionSuite]
   // TODO: 4.x enableSuite[GlutenFlatMapGroupsWithStateSuite]
@@ -1198,7 +1206,7 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenGroupStateSuite]
   enableSuite[GlutenLongOffsetSuite]
   enableSuite[GlutenMemorySourceStressSuite]
-  enableSuite[GlutenMultiStatefulOperatorsSuite]
+  // TODO: 4.x enableSuite[GlutenMultiStatefulOperatorsSuite]  // 2 failures
   enableSuite[GlutenReportSinkMetricsSuite]
   // TODO: 4.x enableSuite[GlutenRocksDBStateStoreFlatMapGroupsWithStateSuite]
   // TODO: 4.x enableSuite[GlutenRocksDBStateStoreStreamingAggregationSuite]
