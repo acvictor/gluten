@@ -364,7 +364,7 @@ object MetricsUtil extends Logging {
         }
       } catch {
         case e: Exception =>
-          logWarning(s"Updating native metrics failed due to ${e.getCause}.")
+          logError(s"Updating native metrics failed due to ${e.getCause}." + e)
           ()
       }
   }
