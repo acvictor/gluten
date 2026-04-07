@@ -253,19 +253,15 @@ object MetricsUtil extends Logging {
 
     mutNode.updater match {
       case smj: SortMergeJoinMetricsUpdater =>
-        smj.updateJoinMetrics(
-          operatorMetrics,
-          metrics.getSingleMetrics,
-          joinParamsMap.get(operatorIdx))
+        val joinParams = Option(joinParamsMap.get(operatorIdx)).getOrElse(JoinParams())
+        smj.updateJoinMetrics(operatorMetrics, metrics.getSingleMetrics, joinParams)
       case ju: JoinMetricsUpdaterBase =>
         // JoinRel and CrossRel output two suites of metrics respectively for build and probe.
         // Therefore, fetch one more suite of metrics here.
         operatorMetrics.add(metrics.getOperatorMetrics(curMetricsIdx))
         curMetricsIdx -= 1
-        ju.updateJoinMetrics(
-          operatorMetrics,
-          metrics.getSingleMetrics,
-          joinParamsMap.get(operatorIdx))
+        val joinParams = Option(joinParamsMap.get(operatorIdx)).getOrElse(JoinParams())
+        ju.updateJoinMetrics(operatorMetrics, metrics.getSingleMetrics, joinParams)
       case u: UnionMetricsUpdater =>
         // JoinRel outputs two suites of metrics respectively for hash build and hash probe.
         // Therefore, fetch one more suite of metrics here.
@@ -273,7 +269,8 @@ object MetricsUtil extends Logging {
         curMetricsIdx -= 1
         u.updateUnionMetrics(operatorMetrics)
       case hau: HashAggregateMetricsUpdater =>
-        hau.updateAggregationMetrics(operatorMetrics, aggParamsMap.get(operatorIdx))
+        val aggParams = Option(aggParamsMap.get(operatorIdx)).getOrElse(AggregationParams())
+        hau.updateAggregationMetrics(operatorMetrics, aggParams)
       case lu: LimitMetricsUpdater =>
         // Limit over Sort is converted to TopN node in Velox, so there is only one suite of metrics
         // for the two transformers. We do not update metrics for limit and leave it for sort.
