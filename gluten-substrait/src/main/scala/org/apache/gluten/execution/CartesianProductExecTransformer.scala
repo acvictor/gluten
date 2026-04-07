@@ -97,6 +97,7 @@ case class CartesianProductExecTransformer(
 
     val operatorId = context.nextOperatorId(this.nodeName)
     val joinParams = new JoinParams
+    joinParams.postProjectionNeeded = false
     if (condition.isDefined) {
       joinParams.isWithCondition = true
     }

@@ -253,14 +253,18 @@ object MetricsUtil extends Logging {
 
     mutNode.updater match {
       case smj: SortMergeJoinMetricsUpdater =>
-        val joinParams = Option(joinParamsMap.get(operatorIdx)).getOrElse(JoinParams())
+        val joinParams = Option(joinParamsMap.get(operatorIdx)).getOrElse {
+          val p = JoinParams(); p.postProjectionNeeded = false; p
+        }
         smj.updateJoinMetrics(operatorMetrics, metrics.getSingleMetrics, joinParams)
       case ju: JoinMetricsUpdaterBase =>
         // JoinRel and CrossRel output two suites of metrics respectively for build and probe.
         // Therefore, fetch one more suite of metrics here.
         operatorMetrics.add(metrics.getOperatorMetrics(curMetricsIdx))
         curMetricsIdx -= 1
-        val joinParams = Option(joinParamsMap.get(operatorIdx)).getOrElse(JoinParams())
+        val joinParams = Option(joinParamsMap.get(operatorIdx)).getOrElse {
+          val p = JoinParams(); p.postProjectionNeeded = false; p
+        }
         ju.updateJoinMetrics(operatorMetrics, metrics.getSingleMetrics, joinParams)
       case u: UnionMetricsUpdater =>
         // JoinRel outputs two suites of metrics respectively for hash build and hash probe.
