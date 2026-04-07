@@ -342,30 +342,24 @@ object MetricsUtil extends Logging {
       aggParamsMap: JMap[JLong, AggregationParams],
       taskStatsAccumulator: TaskStatsAccumulator): IMetrics => Unit = {
     imetrics =>
-      try {
-        val metrics = imetrics.asInstanceOf[Metrics]
-        val numNativeMetrics = metrics.inputRows.length
-        if (numNativeMetrics == 0) {
-          ()
-        } else {
-          updateTransformerMetricsInternal(
-            mutNode,
-            relMap,
-            operatorIdx,
-            metrics,
-            numNativeMetrics - 1,
-            joinParamsMap,
-            aggParamsMap)
+      val metrics = imetrics.asInstanceOf[Metrics]
+      val numNativeMetrics = metrics.inputRows.length
+      if (numNativeMetrics == 0) {
+        ()
+      } else {
+        updateTransformerMetricsInternal(
+          mutNode,
+          relMap,
+          operatorIdx,
+          metrics,
+          numNativeMetrics - 1,
+          joinParamsMap,
+          aggParamsMap)
 
-          // Update the task stats accumulator with the metrics.
-          if (metrics.taskStats != null) {
-            taskStatsAccumulator.add(metrics.taskStats)
-          }
+        // Update the task stats accumulator with the metrics.
+        if (metrics.taskStats != null) {
+          taskStatsAccumulator.add(metrics.taskStats)
         }
-      } catch {
-        case e: Exception =>
-          logError(s"Updating native metrics failed due to ${e.getCause}." + e)
-          ()
       }
   }
 }
