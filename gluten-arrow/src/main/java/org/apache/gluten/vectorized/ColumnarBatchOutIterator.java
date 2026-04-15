@@ -145,6 +145,12 @@ public class ColumnarBatchOutIterator extends ClosableIterator<ColumnarBatch>
 
   @Override
   protected RuntimeException translateException(Exception e) {
+    // If the exception is already a RuntimeException that originated from Java
+    // (preserved across the JNI boundary), return it as is so that the original
+    // exception type and error condition codes are not lost.
+    if (e instanceof RuntimeException && !(e instanceof GlutenException)) {
+      return (RuntimeException) e;
+    }
     String msg = findFirstNonNullMessage(e);
     if (msg != null) {
       RuntimeException schemaEx = translateToSchemaException(msg);
@@ -152,6 +158,9 @@ public class ColumnarBatchOutIterator extends ClosableIterator<ColumnarBatch>
         schemaEx.initCause(e);
         return schemaEx;
       }
+    }
+    if (e instanceof RuntimeException) {
+      return (RuntimeException) e;
     }
     return new GlutenException(e);
   }

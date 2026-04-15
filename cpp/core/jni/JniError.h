@@ -23,16 +23,28 @@
 #include "utils/Exception.h"
 
 #ifndef JNI_METHOD_START
-#define JNI_METHOD_START try {
+#define JNI_METHOD_START           \
+  clearPendingCallbackException(); \
+  try {
 // macro ended
 #endif
 
 #ifndef JNI_METHOD_END
-#define JNI_METHOD_END(fallback_expr)                                            \
-  }                                                                              \
-  catch (std::exception & e) {                                                   \
-    env->ThrowNew(gluten::getJniErrorState()->glutenExceptionClass(), e.what()); \
-    return fallback_expr;                                                        \
+#define JNI_METHOD_END(fallback_expr)                                              \
+  }                                                                                \
+  catch (JniPendingException & e) {                                                \
+    clearPendingCallbackException();                                               \
+    env->Throw(e.javaThrowable());                                                 \
+    return fallback_expr;                                                          \
+  }                                                                                \
+  catch (std::exception & e) {                                                     \
+    jthrowable original = takePendingCallbackException();                          \
+    if (original) {                                                                \
+      env->Throw(original);                                                        \
+    } else {                                                                       \
+      env->ThrowNew(gluten::getJniErrorState()->glutenExceptionClass(), e.what()); \
+    }                                                                              \
+    return fallback_expr;                                                          \
   }
 // macro ended
 #endif

@@ -48,6 +48,54 @@ static inline std::string jStringToCString(JNIEnv* env, jstring string) {
   return result;
 }
 
+// A C++ exception that carries an original Java throwable through native code.
+// When caught by JNI_METHOD_END, the original Java exception is rethrown via
+// env->Throw() instead of being replaced by a new GlutenException.
+// The jthrowable is a JNI local reference, which remains valid as long as we
+// are within the same native method frame which is before JNI_METHOD_END returns).
+class JniPendingException : public std::runtime_error {
+ public:
+  JniPendingException(jthrowable javaThrowable, const std::string& message)
+      : std::runtime_error(message), javaThrowable_(javaThrowable) {}
+
+  jthrowable javaThrowable() const {
+    return javaThrowable_;
+  }
+
+ private:
+  jthrowable javaThrowable_;
+};
+
+// Thread-local storage for the original Java throwable from a JNI callback exception.
+//
+// When checkException() detects a pending Java exception, it stores the jthrowable
+// here as a backup before throwing JniPendingException. This is needed because Velox's
+// internal exception handlers (e.g., CALL_OPERATOR in Driver.cpp) catch std::exception
+// and re-wrap it as VeloxRuntimeError, destroying the JniPendingException and its
+// jthrowable. The thread-local survives this re-wrapping, so JNI_METHOD_END can
+// recover the original Java exception from here as a fallback.
+//
+// The inline function with static thread_local ensures a single variable per thread
+// across all translation units (C++17 guarantee).
+inline jthrowable& pendingCallbackException() {
+  static thread_local jthrowable value = nullptr;
+  return value;
+}
+
+static inline void storePendingCallbackException(jthrowable t) {
+  pendingCallbackException() = t;
+}
+
+static inline jthrowable takePendingCallbackException() {
+  jthrowable t = pendingCallbackException();
+  pendingCallbackException() = nullptr;
+  return t;
+}
+
+static inline void clearPendingCallbackException() {
+  pendingCallbackException() = nullptr;
+}
+
 static inline void checkException(JNIEnv* env) {
   if (env->ExceptionCheck()) {
     jthrowable t = env->ExceptionOccurred();
@@ -73,7 +121,9 @@ static inline void checkException(JNIEnv* env) {
       }
     }
 
-    throw gluten::GlutenException(message.str());
+    // Store in thread-local as a backup before throwing.
+    storePendingCallbackException(t);
+    throw JniPendingException(t, message.str());
   }
 }
 

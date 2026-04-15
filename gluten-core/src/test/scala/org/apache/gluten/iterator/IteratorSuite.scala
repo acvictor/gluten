@@ -16,6 +16,7 @@
  */
 package org.apache.gluten.iterator
 
+import org.apache.gluten.exception.GlutenException
 import org.apache.gluten.iterator.Iterators.{V1, WrapperBuilder}
 
 import org.apache.spark.task.TaskResources
@@ -133,5 +134,67 @@ abstract class IteratorSuite extends AnyFunSuite {
     wrapped.next
     assert(hasNextCallCount == 2)
     assert(nextCallCount == 2)
+  }
+}
+
+/**
+ * Tests that ClosableIterator preserves RuntimeException subclasses as is and wraps checked
+ * exceptions in GlutenException.
+ */
+class ClosableIteratorSuite extends AnyFunSuite {
+
+  test("RuntimeException from hasNext0 propagates as-is") {
+    val ex = new ArithmeticException("overflow")
+    val itr = new ClosableIterator[Int] {
+      override protected def hasNext0(): Boolean = throw ex
+      override protected def next0(): Int = 0
+      override protected def close0(): Unit = {}
+    }
+    val caught = intercept[ArithmeticException](itr.hasNext)
+    assert(caught eq ex)
+  }
+
+  test("RuntimeException from next0 propagates as-is") {
+    val ex = new IllegalStateException("bad state")
+    val itr = new ClosableIterator[Int] {
+      override protected def hasNext0(): Boolean = true
+      override protected def next0(): Int = throw ex
+      override protected def close0(): Unit = {}
+    }
+    val caught = intercept[IllegalStateException](itr.next())
+    assert(caught eq ex)
+  }
+
+  test("GlutenException from hasNext0 propagates as-is") {
+    val ex = new GlutenException("gluten error")
+    val itr = new ClosableIterator[Int] {
+      override protected def hasNext0(): Boolean = throw ex
+      override protected def next0(): Int = 0
+      override protected def close0(): Unit = {}
+    }
+    val caught = intercept[GlutenException](itr.hasNext)
+    assert(caught eq ex)
+  }
+
+  test("Checked exception from hasNext0 is wrapped in GlutenException") {
+    val ioEx = new java.io.IOException("io error")
+    val itr = new ClosableIterator[Int] {
+      override protected def hasNext0(): Boolean = throw ioEx
+      override protected def next0(): Int = 0
+      override protected def close0(): Unit = {}
+    }
+    val caught = intercept[GlutenException](itr.hasNext)
+    assert(caught.getCause eq ioEx)
+  }
+
+  test("Checked exception from next0 is wrapped in GlutenException") {
+    val ioEx = new java.io.IOException("io error")
+    val itr = new ClosableIterator[Int] {
+      override protected def hasNext0(): Boolean = true
+      override protected def next0(): Int = throw ioEx
+      override protected def close0(): Unit = {}
+    }
+    val caught = intercept[GlutenException](itr.next())
+    assert(caught.getCause eq ioEx)
   }
 }
