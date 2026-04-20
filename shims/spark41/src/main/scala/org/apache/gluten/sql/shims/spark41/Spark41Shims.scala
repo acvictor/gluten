@@ -53,7 +53,7 @@ import org.apache.spark.sql.types._
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.parquet.hadoop.metadata.{CompressionCodecName, ParquetMetadata}
 import org.apache.parquet.hadoop.metadata.FileMetaData.EncryptionType
-import org.apache.parquet.schema.MessageType
+import org.apache.parquet.schema.{GroupType, LogicalTypeAnnotation, MessageType}
 
 import java.time.ZoneOffset
 import java.util.{Map => JMap}
@@ -66,16 +66,8 @@ class Spark41Shims extends SparkShims {
 
   override def scalarExpressionMappings: Seq[Sig] = {
     Seq(
-      Sig[SplitPart](ExpressionNames.SPLIT_PART),
-      Sig[Sec](ExpressionNames.SEC),
-      Sig[Csc](ExpressionNames.CSC),
-      Sig[KnownNullable](ExpressionNames.KNOWN_NULLABLE),
       Sig[Empty2Null](ExpressionNames.EMPTY2NULL),
       Sig[Mask](ExpressionNames.MASK),
-      Sig[TimestampAdd](ExpressionNames.TIMESTAMP_ADD),
-      Sig[TimestampDiff](ExpressionNames.TIMESTAMP_DIFF),
-      Sig[RoundFloor](ExpressionNames.FLOOR),
-      Sig[RoundCeil](ExpressionNames.CEIL),
       Sig[ArrayInsert](ExpressionNames.ARRAY_INSERT),
       Sig[CheckOverflowInTableInsert](ExpressionNames.CHECK_OVERFLOW_IN_TABLE_INSERT),
       Sig[ArrayAppend](ExpressionNames.ARRAY_APPEND),
@@ -89,7 +81,6 @@ class Spark41Shims extends SparkShims {
 
   override def aggregateExpressionMappings: Seq[Sig] = {
     Seq(
-      Sig[RegrR2](ExpressionNames.REGR_R2),
       Sig[RegrSlope](ExpressionNames.REGR_SLOPE),
       Sig[RegrIntercept](ExpressionNames.REGR_INTERCEPT),
       Sig[RegrSXY](ExpressionNames.REGR_SXY),
@@ -101,14 +92,13 @@ class Spark41Shims extends SparkShims {
     Seq(
       Sig[ArrayCompact](ExpressionNames.ARRAY_COMPACT),
       Sig[ArrayPrepend](ExpressionNames.ARRAY_PREPEND),
-      Sig[ArraySize](ExpressionNames.ARRAY_SIZE),
       Sig[EqualNull](ExpressionNames.EQUAL_NULL),
-      Sig[ILike](ExpressionNames.ILIKE),
-      Sig[MapContainsKey](ExpressionNames.MAP_CONTAINS_KEY),
       Sig[Get](ExpressionNames.GET),
       Sig[Luhncheck](ExpressionNames.LUHN_CHECK)
     )
   }
+
+  override def isNullIntolerant(expr: Expression): Boolean = expr.nullIntolerant
 
   override def generateFileScanRDD(
       sparkSession: SparkSession,
@@ -568,6 +558,23 @@ class Spark41Shims extends SparkShims {
         true
       case _ =>
         false
+    }
+  }
+
+  override def shouldFallbackForParquetVariantAnnotation(footer: ParquetMetadata): Boolean = {
+    if (SQLConf.get.getConf(SQLConf.PARQUET_IGNORE_VARIANT_ANNOTATION)) {
+      false
+    } else {
+      containsVariantAnnotation(footer.getFileMetaData.getSchema)
+    }
+  }
+
+  private def containsVariantAnnotation(groupType: GroupType): Boolean = {
+    groupType.getFields.asScala.exists {
+      field =>
+        Option(field.getLogicalTypeAnnotation)
+          .exists(_.isInstanceOf[LogicalTypeAnnotation.VariantLogicalTypeAnnotation]) ||
+        (!field.isPrimitive && containsVariantAnnotation(field.asGroupType()))
     }
   }
 

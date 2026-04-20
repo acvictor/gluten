@@ -582,6 +582,55 @@ class MiscOperatorSuite extends VeloxWholeStageTransformerSuite with AdaptiveSpa
     }
   }
 
+  test("native union_all with two level union keeps distinct output columns") {
+    withTempView("union_src_a", "union_src_b", "union_src_c") {
+      Seq(
+        ("valueA", "value1", "value11", "value111"),
+        ("valueA", "value2", "value22", "value222")
+      ).toDF("col1", "col2", "col3", "col4")
+        .createOrReplaceTempView("union_src_a")
+      Seq(
+        ("valueB", "value3", "value33", "value333"),
+        ("valueB", "value4", "value44", "value444")
+      ).toDF("col1", "col2", "col3", "col4")
+        .createOrReplaceTempView("union_src_b")
+
+      withSQLConf(GlutenConfig.NATIVE_UNION_ENABLED.key -> "true") {
+        compareDfResultsAgainstVanillaSpark(
+          () =>
+            spark.sql("""
+                        |with deduplicated_data as (
+                        |  select col1, col2, col3, col4
+                        |  from (
+                        |    select
+                        |      u.col1,
+                        |      u.col2,
+                        |      u.col3,
+                        |      u.col4,
+                        |      row_number() over (partition by u.col2 order by u.col5 desc) as rn
+                        |    from (
+                        |      select col1, col2, col3, col4, 98 as col5 from union_src_a
+                        |      union all
+                        |      select col1, col2, col3, col4, 100 as col5 from union_src_b
+                        |    ) u
+                        |  ) t
+                        |  where t.rn = 1
+                        |)
+                        |select col1, col2, col3, col4
+                        |from deduplicated_data
+                        |where col1 != 'valueC'
+                        |union all
+                        |select col1, col2, col3, col4
+                        |from deduplicated_data
+                        |where col1 = 'valueC'
+                        |""".stripMargin),
+          compareResult = true,
+          checkGlutenPlan[UnionExecTransformer]
+        )
+      }
+    }
+  }
+
   test("union two tables") {
     runQueryAndCompare("""
                          |select count(orderkey) from (
@@ -1861,6 +1910,14 @@ class MiscOperatorSuite extends VeloxWholeStageTransformerSuite with AdaptiveSpa
     assert(plan2.find(_.isInstanceOf[ProjectExecTransformer]).isDefined)
   }
 
+  test("cast date to timestamp with GMT session timezone") {
+    withSQLConf(SQLConf.SESSION_LOCAL_TIMEZONE.key -> "GMT") {
+      runQueryAndCompare("SELECT cast(date'2023-01-02 01:01:01' as timestamp) as ts") {
+        checkGlutenPlan[ProjectExecTransformer]
+      }
+    }
+  }
+
   test("cast timestamp to date") {
     val query = "select cast(ts as date) from values (timestamp'2024-01-01 00:00:00') as tab(ts)"
     runQueryAndCompare(query) {
@@ -1988,7 +2045,7 @@ class MiscOperatorSuite extends VeloxWholeStageTransformerSuite with AdaptiveSpa
     }
   }
 
-  // Enable the test after fixing https://github.com/apache/incubator-gluten/issues/6827
+  // Enable the test after fixing https://github.com/apache/gluten/issues/6827
   ignore("Test round expression") {
     val df1 = runQueryAndCompare("SELECT round(cast(0.5549999999999999 as double), 2)") { _ => }
     checkLengthAndPlan(df1, 1)
@@ -2022,7 +2079,7 @@ class MiscOperatorSuite extends VeloxWholeStageTransformerSuite with AdaptiveSpa
     }
   }
 
-  // Since https://github.com/apache/incubator-gluten/pull/7330.
+  // Since https://github.com/apache/gluten/pull/7330.
   test("field names contain non-ASCII characters") {
     withTempPath {
       path =>

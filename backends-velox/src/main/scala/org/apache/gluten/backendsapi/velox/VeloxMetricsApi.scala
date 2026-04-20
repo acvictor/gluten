@@ -73,10 +73,23 @@ class VeloxMetricsApi extends MetricsApi with Logging {
       SQLMetrics.createNanoTimingMetric(sparkContext, "time of operator input")
     }
 
+    val dynamicFilterMetrics = if (forShuffle) {
+      Map(
+        "valueStreamDynamicFiltersAccepted" -> SQLMetrics.createMetric(
+          sparkContext,
+          "number of dynamic filters accepted by value stream"),
+        "valueStreamDynamicFilterInputRows" -> SQLMetrics.createMetric(
+          sparkContext,
+          "number of input rows")
+      )
+    } else {
+      Map.empty[String, SQLMetric]
+    }
+
     Map(
       "cpuCount" -> SQLMetrics.createMetric(sparkContext, "cpu wall time count"),
       "wallNanos" -> wallNanosMetric
-    ) ++ outputMetrics
+    ) ++ outputMetrics ++ dynamicFilterMetrics
   }
 
   override def genInputIteratorTransformerMetricsUpdater(
@@ -345,6 +358,26 @@ class VeloxMetricsApi extends MetricsApi with Logging {
   override def genExpandTransformerMetricsUpdater(metrics: Map[String, SQLMetric]): MetricsUpdater =
     new ExpandMetricsUpdater(metrics)
 
+  override def genGenerateTransformerMetrics(sparkContext: SparkContext): Map[String, SQLMetric] =
+    Map(
+      "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"),
+      "numOutputVectors" -> SQLMetrics.createMetric(sparkContext, "number of output vectors"),
+      "numOutputBytes" -> SQLMetrics.createSizeMetric(sparkContext, "number of output bytes"),
+      "wallNanos" -> SQLMetrics.createNanoTimingMetric(sparkContext, "time of generate"),
+      "cpuCount" -> SQLMetrics.createMetric(sparkContext, "cpu wall time count"),
+      "peakMemoryBytes" -> SQLMetrics.createSizeMetric(sparkContext, "peak memory bytes"),
+      "numMemoryAllocations" -> SQLMetrics.createMetric(
+        sparkContext,
+        "number of memory allocations"),
+      "loadLazyVectorTime" -> SQLMetrics.createNanoTimingMetric(
+        sparkContext,
+        "time of loading lazy vectors")
+    )
+
+  override def genGenerateTransformerMetricsUpdater(
+      metrics: Map[String, SQLMetric]): MetricsUpdater =
+    new GenerateMetricsUpdater(metrics)
+
   override def genCustomExpandMetrics(sparkContext: SparkContext): Map[String, SQLMetric] =
     Map("numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"))
 
@@ -541,7 +574,8 @@ class VeloxMetricsApi extends MetricsApi with Logging {
       "dataSize" -> SQLMetrics.createSizeMetric(sparkContext, "data size"),
       "numOutputRows" -> SQLMetrics.createMetric(sparkContext, "number of output rows"),
       "collectTime" -> SQLMetrics.createTimingMetric(sparkContext, "time to collect"),
-      "broadcastTime" -> SQLMetrics.createTimingMetric(sparkContext, "time to broadcast")
+      "broadcastTime" -> SQLMetrics.createTimingMetric(sparkContext, "time to broadcast"),
+      "buildThreads" -> SQLMetrics.createMetric(sparkContext, "build threads")
     )
 
   override def genColumnarSubqueryBroadcastMetrics(
@@ -654,7 +688,10 @@ class VeloxMetricsApi extends MetricsApi with Logging {
       "numOutputBytes" -> SQLMetrics.createSizeMetric(sparkContext, "number of output bytes"),
       "loadLazyVectorTime" -> SQLMetrics.createNanoTimingMetric(
         sparkContext,
-        "time of loading lazy vectors")
+        "time of loading lazy vectors"),
+      "buildHashTableTime" -> SQLMetrics.createTimingMetric(
+        sparkContext,
+        "time to build hash table")
     )
 
   override def genHashJoinTransformerMetricsUpdater(

@@ -23,7 +23,6 @@ import org.apache.gluten.sql.shims.SparkShimLoader
 
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
-import org.apache.spark.sql.catalyst.expressions.objects.AssertNotNull
 import org.apache.spark.sql.catalyst.optimizer.NormalizeNaNAndZero
 import org.apache.spark.sql.execution.ScalarSubquery
 
@@ -267,6 +266,7 @@ object ExpressionMappings {
     Sig[MapFromArrays](MAP_FROM_ARRAYS),
     Sig[MapEntries](MAP_ENTRIES),
     Sig[MapZipWith](MAP_ZIP_WITH),
+    Sig[MapFromEntries](MAP_FROM_ENTRIES),
     Sig[StringToMap](STR_TO_MAP),
     Sig[TransformKeys](TRANSFORM_KEYS),
     Sig[TransformValues](TRANSFORM_VALUES),
@@ -295,12 +295,19 @@ object ExpressionMappings {
     Sig[WidthBucket](WIDTH_BUCKET),
     Sig[ReplicateRows](REPLICATE_ROWS),
     Sig[RaiseError](RAISE_ERROR),
-    Sig[AssertNotNull](ASSERT_NOT_NULL),
     Sig[SparkVersion](VERSION),
     // Decimal
     Sig[UnscaledValue](UNSCALED_VALUE),
     // Generator function
-    Sig[Stack](STACK)
+    Sig[Stack](STACK),
+    Sig[SplitPart](SPLIT_PART),
+    Sig[Sec](SEC),
+    Sig[Csc](CSC),
+    Sig[KnownNullable](KNOWN_NULLABLE),
+    Sig[TimestampAdd](TIMESTAMP_ADD),
+    Sig[TimestampDiff](TIMESTAMP_DIFF),
+    Sig[RoundFloor](FLOOR),
+    Sig[RoundCeil](CEIL)
   ) ++ SparkShimLoader.getSparkShims.scalarExpressionMappings
 
   /** Mapping Spark aggregate expression to Substrait function name */
@@ -329,7 +336,8 @@ object ExpressionMappings {
     Sig[Kurtosis](KURTOSIS),
     Sig[ApproximatePercentile](APPROX_PERCENTILE),
     Sig[HyperLogLogPlusPlus](APPROX_COUNT_DISTINCT),
-    Sig[Percentile](PERCENTILE)
+    Sig[Percentile](PERCENTILE),
+    Sig[RegrR2](REGR_R2)
   ) ++ SparkShimLoader.getSparkShims.aggregateExpressionMappings
 
   /** Mapping Spark window expression to Substrait function name */
@@ -350,7 +358,10 @@ object ExpressionMappings {
     Sig[NullIf](NULLIF),
     Sig[Nvl](NVL),
     Sig[Nvl2](NVL2),
-    Sig[Right](RIGHT)
+    Sig[Right](RIGHT),
+    Sig[ArraySize](ARRAY_SIZE),
+    Sig[ILike](ILIKE),
+    Sig[MapContainsKey](MAP_CONTAINS_KEY)
   ) ++ SparkShimLoader.getSparkShims.runtimeReplaceableExpressionMappings
 
   def blacklistExpressionMap: Map[Class[_], String] = {

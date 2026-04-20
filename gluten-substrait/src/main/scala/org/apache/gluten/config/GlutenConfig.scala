@@ -170,7 +170,7 @@ class GlutenConfig(conf: SQLConf) extends GlutenCoreConfig(conf) {
       .equals("org.apache.spark.shuffle.sort.ColumnarShuffleManager")
 
   // Whether to use CelebornShuffleManager.
-  // TODO: Deprecate the API: https://github.com/apache/incubator-gluten/issues/10107.
+  // TODO: Deprecate the API: https://github.com/apache/gluten/issues/10107.
   def isUseCelebornShuffleManager: Boolean =
     conf
       .getConfString("spark.shuffle.manager", "sort")
@@ -239,6 +239,9 @@ class GlutenConfig(conf: SQLConf) extends GlutenCoreConfig(conf) {
   def columnarShuffleEnableDictionary: Boolean =
     getConf(SHUFFLE_ENABLE_DICTIONARY)
 
+  def columnarShuffleEnableTypeAwareCompress: Boolean =
+    getConf(SHUFFLE_ENABLE_TYPE_AWARE_COMPRESS)
+
   def maxBatchSize: Int = getConf(COLUMNAR_MAX_BATCH_SIZE)
 
   def shuffleWriterBufferSize: Int = getConf(SHUFFLE_WRITER_BUFFER_SIZE)
@@ -285,14 +288,6 @@ class GlutenConfig(conf: SQLConf) extends GlutenCoreConfig(conf) {
   def validationLogLevel: String = getConf(VALIDATION_LOG_LEVEL)
 
   def softAffinityLogLevel: String = getConf(SOFT_AFFINITY_LOG_LEVEL)
-
-  // A comma-separated list of classes for the extended columnar pre rules
-  def extendedColumnarTransformRules: String = getConf(EXTENDED_COLUMNAR_TRANSFORM_RULES)
-
-  // A comma-separated list of classes for the extended columnar post rules
-  def extendedColumnarPostRules: String = getConf(EXTENDED_COLUMNAR_POST_RULES)
-
-  def extendedExpressionTransformer: String = getConf(EXTENDED_EXPRESSION_TRAN_CONF)
 
   def smallFileThreshold: Double = getConf(SMALL_FILE_THRESHOLD)
 
@@ -494,7 +489,6 @@ object GlutenConfig extends ConfigRegistry {
     SPARK_S3_CONNECTION_MAXIMUM,
     SPARK_S3_ENDPOINT_REGION,
     SPARK_S3_AWS_IMDS_ENABLED,
-    "spark.gluten.velox.fs.s3a.connect.timeout",
     "spark.gluten.velox.fs.s3a.retry.mode",
     "spark.gluten.velox.awsSdkLogLevel",
     "spark.gluten.velox.s3UseProxyFromEnv",
@@ -604,7 +598,6 @@ object GlutenConfig extends ConfigRegistry {
       (SPARK_S3_USE_INSTANCE_CREDENTIALS, "false"),
       (SPARK_S3_RETRY_MAX_ATTEMPTS, "20"),
       (SPARK_S3_CONNECTION_MAXIMUM, "15"),
-      ("spark.gluten.velox.fs.s3a.connect.timeout", "200s"),
       ("spark.gluten.velox.fs.s3a.retry.mode", "legacy"),
       (
         "spark.gluten.sql.columnar.backend.velox.IOThreads",
@@ -663,10 +656,6 @@ object GlutenConfig extends ConfigRegistry {
   }
 
   val GLUTEN_ENABLED = GlutenCoreConfig.GLUTEN_ENABLED
-
-  val RAS_ENABLED = GlutenCoreConfig.RAS_ENABLED
-
-  val RAS_COST_MODEL = GlutenCoreConfig.RAS_COST_MODEL
 
   val GLUTEN_UI_ENABLED = buildStaticConf("spark.gluten.ui.enabled")
     .doc(
@@ -1086,6 +1075,15 @@ object GlutenConfig extends ConfigRegistry {
       .booleanConf
       .createWithDefault(false)
 
+  val SHUFFLE_ENABLE_TYPE_AWARE_COMPRESS =
+    buildConf("spark.gluten.sql.columnar.shuffle.typeAwareCompress.enabled")
+      .doc(
+        "Enable type-aware compression (e.g. FFor for 64-bit integers) in shuffle. " +
+          "Not compatible with dictionary encoding; if both are enabled, " +
+          "type-aware compression is automatically disabled.")
+      .booleanConf
+      .createWithDefault(false)
+
   val COLUMNAR_MAX_BATCH_SIZE =
     buildConf("spark.gluten.sql.columnar.maxBatchSize").intConf
       .checkValue(_ > 0, s"must be positive.")
@@ -1319,31 +1317,6 @@ object GlutenConfig extends ConfigRegistry {
           "for velox backend.")
       .booleanConf
       .createWithDefault(true)
-
-  // FIXME: This only works with CH backend.
-  val EXTENDED_COLUMNAR_TRANSFORM_RULES =
-    buildConf("spark.gluten.sql.columnar.extended.columnar.transform.rules")
-      .internal()
-      .withAlternative("spark.gluten.sql.columnar.extended.columnar.pre.rules")
-      .doc("A comma-separated list of classes for the extended columnar transform rules.")
-      .stringConf
-      .createWithDefaultString("")
-
-  // FIXME: This only works with CH backend.
-  val EXTENDED_COLUMNAR_POST_RULES =
-    buildConf("spark.gluten.sql.columnar.extended.columnar.post.rules")
-      .internal()
-      .doc("A comma-separated list of classes for the extended columnar post rules.")
-      .stringConf
-      .createWithDefaultString("")
-
-  // FIXME: This only works with CH backend.
-  val EXTENDED_EXPRESSION_TRAN_CONF =
-    buildConf("spark.gluten.sql.columnar.extended.expressions.transformer")
-      .internal()
-      .doc("A class for the extended expressions transformer.")
-      .stringConf
-      .createWithDefaultString("")
 
   val EXPRESSION_BLACK_LIST =
     buildConf("spark.gluten.expression.blacklist")
