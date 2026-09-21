@@ -51,10 +51,21 @@ class ColumnarShuffleManager(conf: SparkConf)
   import ColumnarShuffleManager._
 
   private lazy val shuffleExecutorComponents = loadShuffleExecutorComponents(conf)
-  override val shuffleBlockResolver = new IndexShuffleBlockResolver(conf)
 
-  /** A mapping from shuffle ids to the number of mappers producing output for those shuffles. */
+  /**
+   * A mapping from shuffle ids to the task ids of mappers producing output for those shuffles.
+   *
+   * Must be declared before `shuffleBlockResolver`: Scala initializes vals in declaration order, so
+   * the resolver would otherwise capture `null`.
+   */
   private[this] val taskIdMapsForShuffle = new ConcurrentHashMap[Int, OpenHashSet[Long]]()
+
+  // The resolver must share this map rather than allocate its own. It records blocks migrated in
+  // during executor decommissioning, and `unregisterShuffle` reads the same map to delete the
+  // corresponding map output. Passed positionally because Spark 4.0+ gives `_blockManager` no
+  // default value.
+  override val shuffleBlockResolver =
+    new IndexShuffleBlockResolver(conf, null, taskIdMapsForShuffle)
 
   /** Obtains a [[ShuffleHandle]] to pass to tasks. */
   override def registerShuffle[K, V, C](
@@ -179,8 +190,12 @@ class ColumnarShuffleManager(conf: SparkConf)
   override def unregisterShuffle(shuffleId: Int): Boolean = {
     Option(taskIdMapsForShuffle.remove(shuffleId)).foreach {
       mapTaskIds =>
-        mapTaskIds.iterator.foreach {
-          mapId => shuffleBlockResolver.removeDataByMap(shuffleId, mapId)
+        // The block-migration path mutates this set under the same lock; iterating without it
+        // risks a ConcurrentModificationException during decommissioning.
+        mapTaskIds.synchronized {
+          mapTaskIds.iterator.foreach {
+            mapId => shuffleBlockResolver.removeDataByMap(shuffleId, mapId)
+          }
         }
     }
     true
@@ -188,7 +203,8 @@ class ColumnarShuffleManager(conf: SparkConf)
 
   /** Shut down this ShuffleManager. */
   override def stop(): Unit = {
-    shuffleBlockResolver.stop()
+    // SortShuffleManager.stop() stops shuffleBlockResolver.
+    super.stop()
   }
 }
 
