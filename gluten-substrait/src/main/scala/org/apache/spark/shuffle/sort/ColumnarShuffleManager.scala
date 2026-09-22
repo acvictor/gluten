@@ -42,6 +42,12 @@ import scala.collection.JavaConverters._
  * buffers deserialized rows; the row-based branches below produce the same handles and the same
  * writers as `SortShuffleManager`, so the copy is pure overhead here. Keeping the subtype
  * relationship lets Spark take the zero-copy path.
+ *
+ * WARNING: the `shuffleBlockResolver` wiring and the `registerShuffle` / `getWriter` /
+ * `unregisterShuffle` bodies below are copied from Spark's own `SortShuffleManager` rather than
+ * inherited, and Spark has changed them before without this copy being updated. They must be
+ * re-checked against `SortShuffleManager` whenever a new Spark version is supported, and any
+ * divergence either mirrored here or handled through a shim.
  */
 class ColumnarShuffleManager(conf: SparkConf)
   extends SortShuffleManager(conf)
@@ -60,10 +66,15 @@ class ColumnarShuffleManager(conf: SparkConf)
    */
   private[this] val taskIdMapsForShuffle = new ConcurrentHashMap[Int, OpenHashSet[Long]]()
 
-  // The resolver must share this map rather than allocate its own. It records blocks migrated in
-  // during executor decommissioning, and `unregisterShuffle` reads the same map to delete the
-  // corresponding map output. Passed positionally because Spark 4.0+ gives `_blockManager` no
-  // default value.
+  // Mirrors SortShuffleManager: the resolver must share this map rather than allocate its own. It
+  // records blocks migrated in during executor decommissioning, and `unregisterShuffle` reads the
+  // same map to delete the corresponding map output.
+  //
+  // The argument is positional rather than named because the constructor signature differs across
+  // supported Spark versions: 3.4 and 3.5 default both `_blockManager` and `taskIdMapsForShuffle`,
+  // 4.0 drops the defaults, and 4.1 narrows the map type from `java.util.Map` to
+  // `java.util.concurrent.ConcurrentMap`. The positional form compiles against all of them, but it
+  // is signature-sensitive -- re-verify it when adding a new Spark version.
   override val shuffleBlockResolver =
     new IndexShuffleBlockResolver(conf, null, taskIdMapsForShuffle)
 
